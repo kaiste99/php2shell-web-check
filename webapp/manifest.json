@@ -1,0 +1,60 @@
+{
+	"_version": "1.60.0",
+	"sap.app": {
+		"id": "baltx.php2shell",
+		"type": "application",
+		"i18n": {
+			"bundleUrl": "i18n/i18n.properties",
+			"supportedLocales": ["", "de"],
+			"fallbackLocale": ""
+		},
+		"title": "{{appTitle}}",
+		"description": "{{appDescription}}",
+		"applicationVersion": {
+			"version": "0.1.0"
+		}
+	},
+	"sap.ui": {
+		"technology": "UI5",
+		"deviceTypes": {
+			"desktop": true,
+			"tablet": true,
+			"phone": true
+		}
+	},
+	"sap.ui5": {
+		"rootView": {
+			"viewName": "baltx.php2shell.view.Main",
+			"type": "XML",
+			"id": "main"
+		},
+		"dependencies": {
+			"minUI5Version": "1.136.0",
+			"libs": {
+				"sap.m": {},
+				"sap.ui.core": {}
+			}
+		},
+		"contentDensities": {
+			"compact": true,
+			"cozy": true
+		},
+		"models": {
+			"i18n": {
+				"type": "sap.ui.model.resource.ResourceModel",
+				"settings": {
+					"bundleName": "baltx.php2shell.i18n.i18n",
+					"supportedLocales": ["", "de"],
+					"fallbackLocale": ""
+				}
+			},
+			"fix": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "model/fixdata.json"
+			}
+		},
+		"resources": {
+			"css": [{ "uri": "css/style.css" }]
+		}
+	}
+}

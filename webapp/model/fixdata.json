@@ -1,0 +1,43 @@
+{
+  "asOf": "2026-10-21",
+  "cves": ["CVE-2026-109618", "CVE-2026-109619"],
+  "upstreamFixed": {
+    "8.2": "8.2.35",
+    "8.3": "8.3.36",
+    "8.4": "8.4.27",
+    "8.5": "8.5.12"
+  },
+  "distros": [
+    {
+      "id": "debian-13",
+      "label": "Debian 13 (trixie) php8.4",
+      "match": "~deb13u",
+      "status": "fixed",
+      "fixed": "8.4.27-1~deb13u1",
+      "advisory": "DSA-6574-1",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-109618"
+    },
+    {
+      "id": "debian-12",
+      "label": "Debian 12 (bookworm) php8.2",
+      "match": "~deb12u",
+      "status": "no-fix",
+      "fixed": null,
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-109618"
+    },
+    {
+      "id": "ubuntu",
+      "label": "Ubuntu",
+      "match": "-\\d+ubuntu",
+      "status": "unconfirmed",
+      "fixed": null,
+      "source": "https://ubuntu.com/security/CVE-2026-109618"
+    }
+  ],
+  "sources": [
+    { "label": "PHP Security Advisory GHSA-w8hw-w9fx-j79w (CVE-2026-109618)", "url": "https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w" },
+    { "label": "PHP Security Advisory GHSA-6wmf-4rv5-p3rp (CVE-2026-109619)", "url": "https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp" },
+    { "label": "Debian Security Tracker", "url": "https://security-tracker.debian.org/tracker/CVE-2026-109618" },
+    { "label": "Ubuntu CVE Tracker", "url": "https://ubuntu.com/security/CVE-2026-109618" }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "php2shell-web-check",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Passiver Check, ob ein Webserver von PHP2Shell (CVE-2026-109618, CVE-2026-109619) betroffen sein könnte. OpenUI5-Frontend, Node-Backend ohne Laufzeit-Dependencies.",
+  "license": "MIT",
+  "author": "Stefan Kaiser (BALTX.COM)",
+  "homepage": "https://kaiste99.github.io/php2shell-web-check/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaiste99/php2shell-web-check.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "php2shell-check": "bin/check.js"
+  },
+  "scripts": {
+    "build": "ui5 build self-contained --all --clean-dest --dest dist && node scripts/prune-dist.js",
+    "start": "npm run build && node server/index.js",
+    "serve": "node server/index.js",
+    "check": "node bin/check.js",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@ui5/cli": "4.0.71"
+  }
+}

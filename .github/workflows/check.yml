@@ -1,0 +1,46 @@
+name: PHP2Shell Check
+
+# Actions → "PHP2Shell Check" → "Run workflow" → URL eingeben.
+# Das Ergebnis steht in der Zusammenfassung des Laufs.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Website-URL, z.B. https://www.example.ch"
+        required: true
+        type: string
+      lang:
+        description: "Sprache des Berichts"
+        type: choice
+        options: [de, en]
+        default: de
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Check
+        env:
+          # Inputs only via environment, never interpolated into the script
+          TARGET_URL: ${{ inputs.url }}
+          REPORT_LANG: ${{ inputs.lang }}
+        run: |
+          set +e
+          node bin/check.js "$TARGET_URL" --lang "$REPORT_LANG" >> "$GITHUB_STEP_SUMMARY"
+          code=$?
+          case "$code" in
+            0) echo "::notice title=PHP2Shell::Kein Verdacht. Details in der Zusammenfassung." ;;
+            1) echo "::warning title=PHP2Shell::Unbestimmt, lokal prüfen. Details in der Zusammenfassung." ;;
+            2) echo "::error title=PHP2Shell::Verdacht auf Verwundbarkeit. Details in der Zusammenfassung." ;;
+            *) echo "::error title=PHP2Shell::Prüfung fehlgeschlagen. Details in der Zusammenfassung."; exit 1 ;;
+          esac

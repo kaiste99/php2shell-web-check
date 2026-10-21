@@ -1,0 +1,34 @@
+.p2sContainer {
+	max-width: 60rem;
+}
+
+@media (min-width: 62rem) {
+	.p2sContainer {
+		margin-left: auto !important;
+		margin-right: auto !important;
+	}
+}
+
+.p2sVerdict {
+	padding: 1rem 1.25rem;
+	border-left: 0.375rem solid var(--sapNeutralColor);
+	border-radius: var(--sapElement_BorderCornerRadius);
+	background: var(--sapGroup_ContentBackground);
+	box-shadow: var(--sapContent_Shadow0);
+}
+
+.p2sVerdict-red { border-left-color: var(--sapNegativeColor); }
+.p2sVerdict-orange { border-left-color: var(--sapCriticalColor); }
+.p2sVerdict-green { border-left-color: var(--sapPositiveColor); }
+.p2sVerdict-grey { border-left-color: var(--sapNeutralColor); }
+
+.p2sMono,
+.p2sMono textarea {
+	font-family: "72Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+}
+
+.p2sHelp,
+.p2sFooter .sapMText {
+	color: var(--sapContent_LabelColor);
+	font-size: var(--sapFontSmallSize);
+}

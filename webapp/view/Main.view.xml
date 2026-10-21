@@ -1,0 +1,117 @@
+<mvc:View
+	controllerName="baltx.php2shell.controller.Main"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	xmlns="sap.m"
+	displayBlock="true">
+	<App id="app">
+		<Page id="page" title="{i18n>appTitle}" busy="{view>/busy}" busyIndicatorDelay="0">
+			<headerContent>
+				<Link text="GitHub" href="https://github.com/kaiste99/php2shell-web-check" target="_blank" rel="noopener noreferrer"/>
+				<Link text="{i18n>byline}" href="https://www.baltx.com" target="_blank" rel="noopener noreferrer"/>
+			</headerContent>
+			<content>
+				<VBox class="p2sContainer sapUiSmallMargin">
+
+					<MessageStrip text="{view>/intro}" type="Information" showIcon="true" class="sapUiSmallMarginBottom"/>
+
+					<SegmentedButton id="modeButton" selectedKey="{view>/mode}" selectionChange=".onModeChange" width="22rem" class="sapUiSmallMarginBottom">
+						<items>
+							<SegmentedButtonItem key="url" text="{i18n>mode.url}" icon="sap-icon://world"/>
+							<SegmentedButtonItem key="headers" text="{i18n>mode.headers}" icon="sap-icon://paste"/>
+						</items>
+					</SegmentedButton>
+
+					<!-- URL mode (needs the server component) -->
+					<VBox visible="{= ${view>/mode} === 'url' }">
+						<MessageStrip visible="{= ${view>/apiAvailable} === false }" type="Warning" showIcon="true"
+							text="{i18n>api.unavailable}" class="sapUiSmallMarginBottom">
+							<link>
+								<Link text="{i18n>api.actionsLink}" target="_blank" rel="noopener noreferrer"
+									href="https://github.com/kaiste99/php2shell-web-check/actions/workflows/check.yml"/>
+							</link>
+						</MessageStrip>
+						<Label text="{i18n>url.label}" labelFor="urlInput" showColon="true"/>
+						<HBox alignItems="Center" width="100%">
+							<Input id="urlInput" value="{view>/url}" type="Url" placeholder="{i18n>url.placeholder}"
+								submit=".onCheck" enabled="{= ${view>/apiAvailable} !== false }">
+								<layoutData>
+									<FlexItemData growFactor="1"/>
+								</layoutData>
+							</Input>
+							<Button id="checkUrlButton" text="{i18n>button.check}" type="Emphasized" icon="sap-icon://inspection"
+								press=".onCheck" enabled="{= ${view>/apiAvailable} !== false }" class="sapUiTinyMarginBegin"/>
+						</HBox>
+					</VBox>
+
+					<!-- Header mode (runs in the browser) -->
+					<VBox visible="{= ${view>/mode} === 'headers' }">
+						<Label text="{i18n>headers.label}" labelFor="headersInput" showColon="true"/>
+						<TextArea id="headersInput" value="{view>/headersText}" placeholder="{i18n>headers.placeholder}"
+							rows="8" width="100%" growing="true" growingMaxLines="20" class="p2sMono"/>
+						<HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap">
+							<Text text="{i18n>headers.help}" class="p2sHelp sapUiTinyMarginTop"/>
+							<Button id="checkHeadersButton" text="{i18n>button.check}" type="Emphasized" icon="sap-icon://inspection"
+								press=".onCheck" class="sapUiTinyMarginTop"/>
+						</HBox>
+					</VBox>
+
+					<MessageStrip visible="{= !!${view>/error} }" text="{view>/error}" type="Error" showIcon="true"
+						class="sapUiMediumMarginTop"/>
+
+					<!-- Result -->
+					<VBox visible="{= !!${view>/result} }" class="sapUiMediumMarginTop">
+						<HBox id="verdictBox" alignItems="Center" class="p2sVerdict">
+							<core:Icon src="{view>/result/icon}" color="{view>/result/color}" size="2.5rem" class="sapUiSmallMarginEnd"
+								decorative="true"/>
+							<VBox>
+								<Title text="{view>/result/title}" level="H2" titleStyle="H3" wrapping="true"/>
+								<Text text="{view>/result/text}"/>
+								<Text text="{view>/result/checked}" visible="{= !!${view>/result/checked} }" class="p2sHelp sapUiTinyMarginTop"/>
+							</VBox>
+						</HBox>
+
+						<List headerText="{i18n>section.findings}" items="{view>/result/findings}" class="sapUiSmallMarginTop">
+							<StandardListItem title="{view>text}" wrapping="true" icon="sap-icon://search"/>
+						</List>
+
+						<List headerText="{i18n>section.actions}" items="{view>/result/actions}" class="sapUiSmallMarginTop">
+							<StandardListItem title="{view>text}" wrapping="true" icon="sap-icon://process"/>
+						</List>
+
+						<List headerText="{i18n>section.notes}" items="{view>/result/notes}" class="sapUiSmallMarginTop">
+							<StandardListItem title="{view>text}" wrapping="true" icon="sap-icon://hint"/>
+						</List>
+
+						<Panel headerText="{i18n>section.signals}" expandable="true" expanded="false" class="sapUiSmallMarginTop"
+							visible="{= ${view>/result/signals}.length > 0 }">
+							<Table items="{view>/result/signals}">
+								<columns>
+									<Column width="12rem"><Text text="{i18n>col.header}"/></Column>
+									<Column><Text text="{i18n>col.value}"/></Column>
+								</columns>
+								<items>
+									<ColumnListItem>
+										<cells>
+											<Text text="{view>name}"/>
+											<Text text="{view>value}" class="p2sMono" wrapping="true"/>
+										</cells>
+									</ColumnListItem>
+								</items>
+							</Table>
+						</Panel>
+					</VBox>
+
+					<!-- Sources and disclaimer -->
+					<VBox class="sapUiMediumMarginTop p2sFooter">
+						<Title text="{i18n>section.sources}" level="H3" titleStyle="H6"/>
+						<VBox items="{fix>/sources}">
+							<Link text="{fix>label}" href="{fix>url}" target="_blank" rel="noopener noreferrer" wrapping="true"/>
+						</VBox>
+						<Text text="{view>/footer}" class="p2sHelp sapUiSmallMarginTop"/>
+					</VBox>
+				</VBox>
+			</content>
+		</Page>
+	</App>
+</mvc:View>
