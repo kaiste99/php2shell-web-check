@@ -39,7 +39,7 @@ jobs:
           node bin/check.js "$TARGET_URL" --lang "$REPORT_LANG" >> "$GITHUB_STEP_SUMMARY" 2> status.txt
           code=$?
           # status.txt holds our own token (result=… / error=…), filtered to be safe in annotations
-          status=$(tail -n 1 status.txt | tr -cd 'A-Za-z_=')
+          status=$(tail -n 1 status.txt | tr -cd 'A-Za-z0-9_=:')
           case "$code" in
             0) echo "::notice title=PHP2Shell::Kein Verdacht ($status). Details in der Zusammenfassung." ;;
             1) echo "::warning title=PHP2Shell::Unbestimmt, lokal prüfen ($status). Details in der Zusammenfassung." ;;

@@ -68,7 +68,7 @@ async function main(argv) {
 		}
 	} catch (err) {
 		const code = err instanceof CheckError ? err.code : "NETWORK";
-		process.stderr.write(`error=${code}\n`);
+		process.stderr.write(`error=${code}${err && err.detail ? `:${err.detail}` : ""}\n`);
 		if (args.json) process.stdout.write(JSON.stringify({ error: code }) + "\n");
 		else process.stdout.write(`## ⚠️ ${t("error.title")}\n\n${esc(args.url || args.headers || "")}: ${t(`error.${code}`)}\n`);
 		return 3;

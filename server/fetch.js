@@ -17,9 +17,10 @@ const DEFAULTS = {
 };
 
 class CheckError extends Error {
-	constructor(code) {
+	constructor(code, detail) {
 		super(code);
 		this.code = code;
+		this.detail = detail; // low-level error code, for diagnostics only
 	}
 }
 
@@ -58,11 +59,11 @@ function validateTarget(u, opts) {
 function mapError(err) {
 	if (err instanceof CheckError) return err;
 	const code = String(err && err.code || "");
-	if (code === "EBLOCKED") return new CheckError("BLOCKED_TARGET");
-	if (["ENOTFOUND", "EAI_AGAIN", "ENODATA", "EAI_NONAME"].includes(code)) return new CheckError("DNS");
-	if (code === "ETIMEDOUT") return new CheckError("TIMEOUT");
-	if (/CERT|SSL|TLS|SELF_SIGNED|UNABLE_TO_VERIFY/i.test(code)) return new CheckError("TLS");
-	return new CheckError("NETWORK");
+	if (code === "EBLOCKED") return new CheckError("BLOCKED_TARGET", code);
+	if (["ENOTFOUND", "EAI_AGAIN", "ENODATA", "EAI_NONAME"].includes(code)) return new CheckError("DNS", code);
+	if (code === "ETIMEDOUT") return new CheckError("TIMEOUT", code);
+	if (/CERT|SSL|TLS|SELF_SIGNED|UNABLE_TO_VERIFY/i.test(code)) return new CheckError("TLS", code);
+	return new CheckError("NETWORK", code || undefined);
 }
 
 function requestOnce(u, opts, target) {
