@@ -74,7 +74,7 @@ async function main(argv) {
 		return 3;
 	}
 	const result = engine.analyze(input, fixdata);
-	process.stderr.write(`result=${result.verdict}\n`);
+	process.stderr.write(`signals=${result.signals.map((x) => `${x.name}: ${x.value}`).join("; ") || "-"}\nresult=${result.verdict}\n`);
 	process.stdout.write(args.json ? JSON.stringify(result, null, 2) + "\n" : toMarkdown(result, t, input.requestedUrl));
 	return EXIT[result.verdict];
 }
