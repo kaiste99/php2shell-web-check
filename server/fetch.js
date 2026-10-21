@@ -4,6 +4,7 @@
 const http = require("node:http");
 const https = require("node:https");
 const net = require("node:net");
+const crypto = require("node:crypto");
 const { isBlockedAddress, guardedLookup } = require("./ssrf");
 const { version } = require("../package.json");
 
@@ -13,7 +14,16 @@ const DEFAULTS = {
 	maxBodyBytes: 256 * 1024,
 	userAgent: `php2shell-web-check/${version} (+https://github.com/kaiste99/php2shell-web-check)`,
 	allowedHosts: [], // optional allowlist (domain and its subdomains); empty = all public hosts
-	allowedTargets: [] // tests only: exact "host:port" pairs that skip the address policy
+	allowedTargets: [], // tests only: exact "host:port" pairs that skip the address policy
+	ca: undefined // tests only: extra trusted CA
+};
+
+// Second attempt for servers that only speak outdated TLS (old protocol versions,
+// no secure renegotiation). Certificates are still verified.
+const TLS_COMPAT = {
+	minVersion: "TLSv1",
+	ciphers: "DEFAULT:@SECLEVEL=0",
+	secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT
 };
 
 class CheckError extends Error {
@@ -62,18 +72,20 @@ function mapError(err) {
 	if (code === "EBLOCKED") return new CheckError("BLOCKED_TARGET", code);
 	if (["ENOTFOUND", "EAI_AGAIN", "ENODATA", "EAI_NONAME"].includes(code)) return new CheckError("DNS", code);
 	if (code === "ETIMEDOUT") return new CheckError("TIMEOUT", code);
-	if (/CERT|SSL|TLS|SELF_SIGNED|UNABLE_TO_VERIFY/i.test(code)) return new CheckError("TLS", code);
+	if (code === "EPROTO" || /CERT|SSL|TLS|SELF_SIGNED|UNABLE_TO_VERIFY/i.test(code)) return new CheckError("TLS", code);
 	return new CheckError("NETWORK", code || undefined);
 }
 
-function requestOnce(u, opts, target) {
+function requestOnce(u, opts, target, tlsCompat) {
 	return new Promise((resolve, reject) => {
-		const lib = u.protocol === "https:" ? https : http;
+		const isHttps = u.protocol === "https:";
+		const lib = isHttps ? https : http;
 		let finishBody = null; // set once headers are in: a slow body must not discard them
 		const req = lib.request(u, {
 			method: "GET",
 			agent: false,
 			lookup: target.bypass ? undefined : guardedLookup,
+			...(isHttps ? { ca: opts.ca, ...(tlsCompat ? TLS_COMPAT : {}) } : {}),
 			headers: {
 				"User-Agent": opts.userAgent,
 				Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
@@ -112,15 +124,28 @@ function requestOnce(u, opts, target) {
 	});
 }
 
-/** @returns {Promise<{requestedUrl, finalUrl, responses: [{url, status, headers}], body}>} */
+async function requestWithTlsFallback(u, opts, target, state) {
+	try {
+		return await requestOnce(u, opts, target, false);
+	} catch (err) {
+		const certProblem = /CERT|SELF_SIGNED|UNABLE_TO_VERIFY/i.test(err.detail || "");
+		if (err.code !== "TLS" || certProblem || u.protocol !== "https:") throw err;
+		const res = await requestOnce(u, opts, target, true);
+		state.tlsLegacy = true;
+		return res;
+	}
+}
+
+/** @returns {Promise<{requestedUrl, finalUrl, responses: [{url, status, headers}], body, tlsLegacy}>} */
 async function fetchTarget(input, options = {}) {
 	const opts = { ...DEFAULTS, ...options };
 	let u = parseInputUrl(input);
 	const requestedUrl = u.href;
 	const responses = [];
+	const state = { tlsLegacy: false };
 	for (let hop = 0; ; hop++) {
 		const target = validateTarget(u, opts);
-		const res = await requestOnce(u, opts, target);
+		const res = await requestWithTlsFallback(u, opts, target, state);
 		responses.push({ url: u.href, status: res.status, headers: res.headers });
 		const location = res.headers.location;
 		if (res.status >= 300 && res.status < 400 && location) {
@@ -132,7 +157,7 @@ async function fetchTarget(input, options = {}) {
 			}
 			continue;
 		}
-		return { requestedUrl, finalUrl: u.href, responses, body: res.body };
+		return { requestedUrl, finalUrl: u.href, responses, body: res.body, tlsLegacy: state.tlsLegacy };
 	}
 }
 

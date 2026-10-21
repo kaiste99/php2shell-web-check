@@ -133,6 +133,30 @@ test("slow body keeps the headers already received", async () => {
 	assert.equal(r.responses[0].headers["x-powered-by"], "PHP/8.2.20");
 });
 
+test("outdated TLS server: compatibility retry, certificate still verified", async () => {
+	const https = require("node:https");
+	const key = fs.readFileSync(path.join(__dirname, "fixtures", "tls-key.pem"));
+	const cert = fs.readFileSync(path.join(__dirname, "fixtures", "tls-cert.pem"));
+	const srv = https.createServer({ key, cert, minVersion: "TLSv1", maxVersion: "TLSv1.1", ciphers: "DEFAULT:@SECLEVEL=0" }, (req, res) => {
+		res.writeHead(200, { "X-Powered-By": "PHP/7.4.33" });
+		res.end();
+	});
+	await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+	const url = `https://127.0.0.1:${srv.address().port}/`;
+	const o = { allowedTargets: [`127.0.0.1:${srv.address().port}`], timeoutMs: 2000 };
+	try {
+		const r = await fetchTarget(url, { ...o, ca: cert });
+		assert.equal(r.tlsLegacy, true);
+		assert.equal(r.responses[0].headers["x-powered-by"], "PHP/7.4.33");
+		const { engine, fixdata } = require("../server/engine");
+		assert.ok(engine.analyze(r, fixdata).notes.some((n) => n.code === "TLS_LEGACY"));
+		// without trusting the test CA the certificate check must still fail
+		await rejectsWith(fetchTarget(url, o), "TLS");
+	} finally {
+		srv.close();
+	}
+});
+
 test("body is capped", async () => {
 	const r = await fetchTarget(big.url, opts());
 	assert.ok(r.body.length <= DEFAULTS.maxBodyBytes);

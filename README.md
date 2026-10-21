@@ -70,6 +70,7 @@ Mitigation, falls der Patch nicht sofort geht. Sie ist laut PHP-Projekt unvollst
   - nur Ports 80 und 443, keine Zugangsdaten in URLs
   - keine privaten, Loopback-, Link-Local- oder Metadata-Adressen, auch nicht in IPv6-Verpackung (mapped, NAT64, 6to4, Teredo)
   - Die Adressprüfung läuft im DNS-Lookup der Verbindung selbst (kein DNS-Rebinding) und bei jeder Weiterleitung neu.
+- **TLS:** Zertifikate werden immer geprüft. Spricht ein Server nur veraltetes TLS, folgt ein zweiter Versuch im Kompatibilitätsmodus, und das Ergebnis weist darauf hin.
 - **API:**
   - Rate-Limit pro Client
   - nur `application/json`

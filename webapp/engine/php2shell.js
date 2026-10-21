@@ -398,6 +398,9 @@ sap.ui.define([], function () {
 		if (sig.cdn.length) {
 			notes.push({ code: "CDN", params: [sig.cdn.join(", ")] });
 		}
+		if (input.tlsLegacy) {
+			notes.push({ code: "TLS_LEGACY", params: [] });
+		}
 		if (input.finalUrl && hostOf(input.finalUrl) !== hostOf(input.requestedUrl)) {
 			notes.push({ code: "REDIRECTED", params: [input.finalUrl] });
 		}
