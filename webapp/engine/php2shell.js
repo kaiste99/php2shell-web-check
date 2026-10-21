@@ -153,7 +153,7 @@ sap.ui.define([], function () {
 		if (/debian|~deb\d/i.test(t)) {
 			return "Debian";
 		}
-		if (/red ?hat|rhel|centos|almalinux|rocky|cloudlinux|fedora|amazon linux|\.el\d/i.test(t)) {
+		if (/red ?hat|rhel|centos|almalinux|rocky|cloudlinux|fedora|amazon linux|amzn|\.el\d/i.test(t)) {
 			return "RHEL/CentOS/Alma/Rocky";
 		}
 		return null;
@@ -418,8 +418,118 @@ sap.ui.define([], function () {
 		};
 	}
 
+	// ---------------------------------------------------------------- self-test
+
+	var SELFTEST_KEYS = ["PHP_VERSION", "PHP_SAPI", "OS_RELEASE", "memory_limit", "session.upload_progress.enabled",
+		"fatal_error_backtraces", "post_max_size", "max_input_nesting_level"];
+
+	/** Parses the text printed by the self-test PHP file ("key = value" lines, values from var_export). */
+	function parseSelftest(text) {
+		var values = {};
+		String(text || "").split(/\r?\n/).forEach(function (line) {
+			var m = /^\s*([A-Za-z_][\w.]*)\s*=\s*(.*?)\s*$/.exec(line);
+			if (m && SELFTEST_KEYS.indexOf(m[1]) > -1) {
+				var v = m[2];
+				values[m[1]] = v === "false" ? null : v.replace(/^'(.*)'$/, "$1");
+			}
+		});
+		return values;
+	}
+
+	function isOn(value) {
+		return /^(1|on|true|yes)$/i.test(String(value || "").trim());
+	}
+
+	/**
+	 * Exact check from inside the server: version, SAPI and the settings named in
+	 * GHSA-w8hw-w9fx-j79w (CVE-2026-109618) and GHSA-6wmf-4rv5-p3rp (CVE-2026-109619).
+	 * Throws an Error with .code PASTED_CODE or SELFTEST_INVALID.
+	 */
+	function analyzeSelftest(text, fix) {
+		var fail = function (code) {
+			var e = new Error(code);
+			e.code = code;
+			return e;
+		};
+		if (/<\?php/i.test(String(text))) {
+			throw fail("PASTED_CODE");
+		}
+		var s = parseSelftest(text);
+		var v = parsePhpVersion("PHP/" + (s.PHP_VERSION || ""));
+		if (!v) {
+			throw fail("SELFTEST_INVALID");
+		}
+		var sapi = s.PHP_SAPI || "?";
+		// Distribution builds (Ubuntu, Debian, RHEL family) can carry backports without a new version number
+		var ev = evaluateVersion(v, distroFromText(s.OS_RELEASE), fix);
+		var findings = [{ code: "SELFTEST_FOUND", params: [v.raw, sapi] }, ev.finding];
+		var actions = [{ code: "DELETE_FILE", params: [] }];
+		var vulnerable = ev.verdict !== "green";
+		var uploadOn = isOn(s["session.upload_progress.enabled"]);
+		var backtraces = s.fatal_error_backtraces; // null below PHP 8.5
+
+		// CVE-2026-109618: OOM corruption, risk depends on the SAPI
+		if (sapi === "apache2handler") {
+			findings.push({ code: "A_RISK_HIGH", params: [] });
+		} else if (/^(fpm-fcgi|litespeed|frankenphp)$/.test(sapi)) {
+			findings.push({ code: "A_RISK_MEDIUM", params: [sapi] });
+		} else {
+			findings.push({ code: "A_RISK_UNKNOWN", params: [sapi] });
+		}
+		findings.push(String(s.memory_limit).trim() === "-1"
+			? { code: "A_MEMORY_UNLIMITED", params: [] }
+			: { code: "A_MEMORY_LIMITED", params: [s.memory_limit || "?"] });
+
+		// CVE-2026-109619: stale state, paths via upload progress and (8.5) fatal backtraces
+		findings.push({ code: uploadOn ? "B_UPLOAD_ON" : "B_UPLOAD_OFF", params: [] });
+		if (backtraces !== null && backtraces !== undefined) {
+			findings.push({ code: isOn(backtraces) ? "B_BACKTRACES_ON" : "B_BACKTRACES_OFF", params: [] });
+		}
+		if (sapi === "apache2handler") {
+			findings.push({ code: "B_MODPHP_INI", params: [] });
+		}
+
+		var fixedList = Object.keys(fix.upstreamFixed).sort(compareVersion).reverse()
+			.map(function (b) { return fix.upstreamFixed[b]; }).join(", ");
+		if (vulnerable) {
+			if (ev.verdict === "orange") {
+				actions.push({ code: "LOCAL_CHECK", params: [] });
+			}
+			actions.push({ code: "PATCH", params: [fixedList] }, { code: "HOSTER", params: [] }, { code: "RESTART", params: [] });
+			if (uploadOn) {
+				actions.push({ code: "SELFTEST_UPLOAD_OFF", params: [] });
+			}
+			if (isOn(backtraces)) {
+				actions.push({ code: "SELFTEST_BACKTRACES_OFF", params: [] });
+			}
+			if (String(s.memory_limit).trim() !== "-1") {
+				actions.push({ code: "SELFTEST_MEMORY", params: [] });
+			}
+			if (ev.eol) {
+				actions.push({ code: "EOL_UPGRADE", params: [] });
+			}
+		} else if (uploadOn) {
+			actions.push({ code: "SELFTEST_UPLOAD_KEEP_OFF", params: [] });
+		}
+
+		return {
+			kind: "selftest",
+			verdict: ev.verdict,
+			php: { detected: true, version: v.upstream, raw: v.raw, source: "self-test" },
+			findings: findings,
+			actions: actions,
+			notes: [{ code: "SELFTEST_SCOPE", params: [] }, { code: "DATA_AS_OF", params: [fix.asOf] }],
+			signals: SELFTEST_KEYS.filter(function (k) { return k in s; })
+				.map(function (k) { return { name: k, value: s[k] === null ? "(n/a)" : String(s[k]).slice(0, 100) }; }),
+			requestedUrl: null,
+			finalUrl: null
+		};
+	}
+
 	return {
 		analyze: analyze,
+		analyzeSelftest: analyzeSelftest,
+		parseSelftest: parseSelftest,
 		parseHeaderBlock: parseHeaderBlock,
 		parsePhpVersion: parsePhpVersion,
 		compareVersion: compareVersion,

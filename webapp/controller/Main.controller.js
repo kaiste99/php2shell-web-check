@@ -2,11 +2,39 @@ sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/Device",
+	"sap/m/MessageToast",
+	"sap/base/strings/formatMessage",
 	"baltx/php2shell/engine/php2shell"
-], function (Controller, JSONModel, Device, engine) {
+], function (Controller, JSONModel, Device, MessageToast, formatMessage, engine) {
 	"use strict";
 
 	var MAX_PASTE = 64 * 1024;
+
+	// Prints only what the self-test needs, no full phpinfo()
+	var SELFTEST_CODE = [
+		"<?php",
+		"// PHP2Shell-Selbsttest (CVE-2026-109618, CVE-2026-109619). Nach dem Aufruf sofort loeschen!",
+		"header('Content-Type: text/plain; charset=utf-8');",
+		"header('Cache-Control: no-store');",
+		"header('X-Robots-Tag: noindex');",
+		"echo 'PHP_VERSION = ', PHP_VERSION, \"\\n\";",
+		"echo 'PHP_SAPI = ', PHP_SAPI, \"\\n\";",
+		"$os = @parse_ini_file('/etc/os-release');",
+		"echo 'OS_RELEASE = ', isset($os['ID']) ? $os['ID'] . ' ' . (isset($os['VERSION_ID']) ? $os['VERSION_ID'] : '') : '?', \"\\n\";",
+		"foreach (['memory_limit', 'session.upload_progress.enabled', 'fatal_error_backtraces',",
+		"          'post_max_size', 'max_input_nesting_level'] as $k) {",
+		"    echo $k, ' = ', var_export(ini_get($k), true), \"\\n\";",
+		"}",
+		""
+	].join("\n");
+
+	function randomFileName() {
+		var bytes = new Uint8Array(5);
+		window.crypto.getRandomValues(bytes);
+		return "php2shell-check-" + Array.prototype.map.call(bytes, function (b) {
+			return ("0" + b.toString(16)).slice(-2);
+		}).join("") + ".php";
+	}
 	var VERDICTS = {
 		red: { icon: "sap-icon://error", color: "Negative" },
 		orange: { icon: "sap-icon://alert", color: "Critical" },
@@ -33,7 +61,10 @@ sap.ui.define([
 				result: null,
 				error: null,
 				intro: "",
-				footer: ""
+				footer: "",
+				selftestFile: randomFileName(),
+				selftestCode: SELFTEST_CODE,
+				selftestText: ""
 			});
 			this.getView().setModel(this._model, "view");
 
@@ -78,6 +109,19 @@ sap.ui.define([
 			this._model.setProperty("/error", null);
 		},
 
+		formatText: function (pattern, value) {
+			return pattern ? formatMessage(pattern, [value]) : "";
+		},
+
+		onCopySelftest: function () {
+			var text = this._text("selftest.copied");
+			navigator.clipboard.writeText(SELFTEST_CODE).then(function () {
+				MessageToast.show(text);
+			}, function () {
+				this.byId("selftestCode").focus();
+			}.bind(this));
+		},
+
 		onCheck: function () {
 			var model = this._model;
 			model.setProperty("/error", null);
@@ -100,10 +144,25 @@ sap.ui.define([
 			var model = this._model;
 			var fix = this._fix();
 
+			if (model.getProperty("/mode") === "selftest") {
+				var output = String(model.getProperty("/selftestText") || "").slice(0, MAX_PASTE);
+				if (!output.trim()) {
+					return Promise.reject(failure("EMPTY_INPUT"));
+				}
+				try {
+					return Promise.resolve(engine.analyzeSelftest(output, fix));
+				} catch (e) {
+					return Promise.reject(e);
+				}
+			}
+
 			if (model.getProperty("/mode") === "headers") {
 				var text = String(model.getProperty("/headersText") || "").slice(0, MAX_PASTE);
 				if (!text.trim()) {
 					return Promise.reject(failure("EMPTY_INPUT"));
+				}
+				if (/<\?php/i.test(text)) {
+					return Promise.reject(failure("PASTED_CODE"));
 				}
 				var responses = engine.parseHeaderBlock(text);
 				if (!responses.length) {
@@ -141,13 +200,14 @@ sap.ui.define([
 				});
 			};
 			var look = VERDICTS[result.verdict];
+			var suffix = result.kind === "selftest" ? ".selftest" : "";
 
 			this._model.setProperty("/result", {
 				verdict: result.verdict,
 				icon: look.icon,
 				color: look.color,
-				title: t("verdict." + result.verdict + ".title"),
-				text: t("verdict." + result.verdict + ".text"),
+				title: t("verdict." + result.verdict + ".title" + suffix),
+				text: t("verdict." + result.verdict + ".text" + suffix),
 				checked: result.requestedUrl ? t("checkedUrl", [result.requestedUrl]) : "",
 				findings: texts("finding", result.findings),
 				actions: texts("action", result.actions, true),

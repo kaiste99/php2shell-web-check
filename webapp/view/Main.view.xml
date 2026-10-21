@@ -8,17 +8,18 @@
 		<Page id="page" title="{i18n>appTitle}" busy="{view>/busy}" busyIndicatorDelay="0">
 			<headerContent>
 				<Link text="GitHub" href="https://github.com/kaiste99/php2shell-web-check" target="_blank" rel="noopener noreferrer"/>
-				<Link text="{i18n>byline}" href="https://www.baltx.com" target="_blank" rel="noopener noreferrer"/>
+				<Link text="{i18n>byline}" href="https://baltx.com/" target="_blank" rel="noopener noreferrer"/>
 			</headerContent>
 			<content>
 				<VBox class="p2sContainer sapUiSmallMargin">
 
 					<MessageStrip text="{view>/intro}" type="Information" showIcon="true" class="sapUiSmallMarginBottom"/>
 
-					<SegmentedButton id="modeButton" selectedKey="{view>/mode}" selectionChange=".onModeChange" width="22rem" class="sapUiSmallMarginBottom">
+					<SegmentedButton id="modeButton" selectedKey="{view>/mode}" selectionChange=".onModeChange" width="100%" class="sapUiSmallMarginBottom p2sModes">
 						<items>
 							<SegmentedButtonItem key="url" text="{i18n>mode.url}" icon="sap-icon://world"/>
 							<SegmentedButtonItem key="headers" text="{i18n>mode.headers}" icon="sap-icon://paste"/>
+							<SegmentedButtonItem key="selftest" text="{i18n>mode.selftest}" icon="sap-icon://wrench"/>
 						</items>
 					</SegmentedButton>
 
@@ -52,6 +53,24 @@
 						<HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap">
 							<Text text="{i18n>headers.help}" class="p2sHelp sapUiTinyMarginTop"/>
 							<Button id="checkHeadersButton" text="{i18n>button.check}" type="Emphasized" icon="sap-icon://inspection"
+								press=".onCheck" class="sapUiTinyMarginTop"/>
+						</HBox>
+					</VBox>
+
+					<!-- Self-test mode (runs in the browser) -->
+					<VBox visible="{= ${view>/mode} === 'selftest' }">
+						<Text text="{i18n>selftest.intro}" class="sapUiSmallMarginBottom"/>
+						<Text id="selftestStep1" text="{ parts: ['i18n>selftest.step1', 'view>/selftestFile'], formatter: '.formatText' }"/>
+						<TextArea id="selftestCode" value="{view>/selftestCode}" editable="false" rows="15" width="100%" class="p2sMono sapUiTinyMarginTop"
+							ariaLabelledBy="selftestStep1"/>
+						<Button text="{i18n>selftest.copy}" icon="sap-icon://copy" press=".onCopySelftest"/>
+						<Text text="{ parts: ['i18n>selftest.step2', 'view>/selftestFile'], formatter: '.formatText' }" class="sapUiSmallMarginTop"/>
+						<Text id="selftestStep3" text="{i18n>selftest.step3}" class="sapUiSmallMarginTop"/>
+						<TextArea id="selftestOutput" value="{view>/selftestText}" placeholder="{i18n>selftest.placeholder}"
+							rows="9" width="100%" class="p2sMono sapUiTinyMarginTop" ariaLabelledBy="selftestStep3"/>
+						<HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap">
+							<Text text="{i18n>selftest.step4}" class="sapUiTinyMarginTop"/>
+							<Button id="checkSelftestButton" text="{i18n>button.check}" type="Emphasized" icon="sap-icon://inspection"
 								press=".onCheck" class="sapUiTinyMarginTop"/>
 						</HBox>
 					</VBox>

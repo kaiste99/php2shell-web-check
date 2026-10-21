@@ -9,6 +9,10 @@
 	}
 }
 
+.p2sModes {
+	max-width: 42rem;
+}
+
 .p2sVerdict {
 	padding: 1rem 1.25rem;
 	border-left: 0.375rem solid var(--sapNeutralColor);

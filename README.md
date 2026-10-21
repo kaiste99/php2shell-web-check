@@ -3,7 +3,7 @@
 [![CI & Pages](https://github.com/kaiste99/php2shell-web-check/actions/workflows/ci-pages.yml/badge.svg)](https://github.com/kaiste99/php2shell-web-check/actions/workflows/ci-pages.yml)
 
 Passiver Check, ob ein Webserver von **PHP2Shell** betroffen sein könnte (CVE-2026-109618, CVE-2026-109619): Remote Code Execution in PHP ohne Login, CVSS v4 9.2.
-Behoben in **PHP 8.5.12, 8.4.27, 8.3.36 und 8.2.35**. Das Frontend nutzt OpenUI5 (Horizon), das Backend ist Node.js ohne Laufzeit-Dependencies. Ein Projekt von [BALTX.COM](https://www.baltx.com).
+Behoben in **PHP 8.5.12, 8.4.27, 8.3.36 und 8.2.35**. Das Frontend nutzt OpenUI5 (Horizon), das Backend ist Node.js ohne Laufzeit-Dependencies. Ein Projekt von [BALTX.COM](https://baltx.com/).
 
 > **Wichtig:** Eine Prüfung von aussen liefert ein Indiz, keinen Beweis. Backports der Distributionen, Mitigations und weitere Server hinter einem Load-Balancer sind von aussen nicht sichtbar. Verbindlich ist nur die [Prüfung auf dem Server](#prüfung-auf-dem-server).
 
@@ -12,6 +12,7 @@ Behoben in **PHP 8.5.12, 8.4.27, 8.3.36 und 8.2.35**. Das Frontend nutzt OpenUI5
 | Weg | Was du brauchst | Was geprüft wird |
 | --- | --- | --- |
 | **GitHub Pages**: [kaiste99.github.io/php2shell-web-check](https://kaiste99.github.io/php2shell-web-check/) | einen Browser | eingefügte Response-Header, z.B. aus `curl -sIL https://www.example.ch`. Die Auswertung läuft komplett im Browser. |
+| **Server-Selbsttest** (in der App, auch auf Pages) | Zugriff auf das Web-Verzeichnis der Seite | exakte Prüfung von innen: Version, Server-API, `memory_limit`, `session.upload_progress.enabled`, `fatal_error_backtraces` je CVE |
 | **GitHub Actions**: [PHP2Shell Check](https://github.com/kaiste99/php2shell-web-check/actions/workflows/check.yml) → «Run workflow» | Schreibrechte im Repo | eine URL; das Ergebnis steht in der Zusammenfassung des Laufs |
 | **Lokal**: `npm install && npm start` → http://127.0.0.1:8080 | Node.js 22+ | URL oder Header, volle App |
 | **CLI**: `node bin/check.js https://www.example.ch` | Node.js 22+ | URL; Ausgabe als Markdown, mit `--json` als JSON |
@@ -42,6 +43,17 @@ Alle Versionsstände stehen in [`webapp/model/fixdata.json`](webapp/model/fixdat
 Stand 2026-10-21: Debian 13 gefixt mit `8.4.27-1~deb13u1` (DSA-6574-1). Debian 12 noch ohne Fix. Ubuntu ist noch nicht bestätigt; der Ubuntu-Tracker zeigt «Needs evaluation». Neue Advisories nur aus Primärquellen übernehmen (Distribution, php.net) und `asOf` anpassen.
 
 ## Prüfung auf dem Server
+
+**Am einfachsten mit dem Server-Selbsttest in der App:**
+1. Den angezeigten PHP-Code mit zufälligem Dateinamen ins Web-Verzeichnis legen.
+2. Die Datei im Browser öffnen und die Ausgabe in die App einfügen.
+3. Die Datei sofort wieder löschen.
+
+Die Datei gibt nur die Werte aus, die für die beiden Advisories relevant sind, kein vollständiges `phpinfo()`. Die Auswertung läuft im Browser und bewertet jede CVE einzeln:
+- **CVE-2026-109618:** Risiko je Server-API (mod_php, FPM, LSAPI), dazu `memory_limit=-1` als Mitigation
+- **CVE-2026-109619:** offene Angriffswege über Upload Progress, `fatal_error_backtraces` und mod_php-INI-Warnungen
+
+Bei Distributions-Builds wie Ubuntu, Debian oder der RHEL-Familie meldet PHP die alte Upstream-Version auch nach einem Backport. Der Selbsttest erkennt das Betriebssystem und verweist dann auf die Prüfung der Paketversion:
 
 ```bash
 # Debian/Ubuntu: installierte PHP-Pakete und Versionen
