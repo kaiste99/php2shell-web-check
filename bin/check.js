@@ -68,11 +68,13 @@ async function main(argv) {
 		}
 	} catch (err) {
 		const code = err instanceof CheckError ? err.code : "NETWORK";
+		process.stderr.write(`error=${code}\n`);
 		if (args.json) process.stdout.write(JSON.stringify({ error: code }) + "\n");
 		else process.stdout.write(`## ⚠️ ${t("error.title")}\n\n${esc(args.url || args.headers || "")}: ${t(`error.${code}`)}\n`);
 		return 3;
 	}
 	const result = engine.analyze(input, fixdata);
+	process.stderr.write(`result=${result.verdict}\n`);
 	process.stdout.write(args.json ? JSON.stringify(result, null, 2) + "\n" : toMarkdown(result, t, input.requestedUrl));
 	return EXIT[result.verdict];
 }
