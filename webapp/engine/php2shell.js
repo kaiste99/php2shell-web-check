@@ -37,6 +37,8 @@ sap.ui.define([], function () {
 	];
 
 	var CMS_GENERATOR_RE = /wordpress|joomla|drupal|typo3|contao|prestashop|shopware|magento|phpbb|mediawiki|nextcloud|craft cms|processwire/i;
+	// Well-known PHP applications that hide the PHP version, recognised by the page title
+	var PHP_APP_TITLE_RE = /\b(Kimai|Nextcloud|ownCloud|Matomo|phpMyAdmin|Roundcube|GLPI|Moodle|MediaWiki|Joomla!?|Shopware|PrestaShop|Magento|Contao|Craft CMS|SuiteCRM|Dolibarr|osTicket|LimeSurvey|FreeScout|InvoiceNinja|Mautic)\b/;
 
 	// ---------------------------------------------------------------- versions
 
@@ -256,9 +258,9 @@ sap.ui.define([], function () {
 
 			getHeader(h, "set-cookie").forEach(function (val) {
 				var name = val.split("=")[0].trim();
+				show("Set-Cookie", name + "=…"); // names only, never values
 				if (COOKIE_RE.test(name)) {
 					hint("Cookie " + name);
-					show("Set-Cookie", name + "=…");
 				}
 			});
 
@@ -291,6 +293,12 @@ sap.ui.define([], function () {
 				}
 			}
 		});
+		var title = /<title[^>]*>([^<]{1,200})<\/title>/i.exec(html);
+		var app = title && PHP_APP_TITLE_RE.exec(title[1]);
+		if (app) {
+			hint("App: " + app[1]);
+			show("title", title[1]);
+		}
 		if (/\/wp-(content|includes)\//i.test(html)) {
 			hint("WordPress (/wp-content/)");
 		}

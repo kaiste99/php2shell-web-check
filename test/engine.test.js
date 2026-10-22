@@ -85,6 +85,14 @@ test("WordPress detected from page body", () => {
 	assert.match(r.findings[0].params[0], /WordPress 6\.8\.3/);
 });
 
+test("well-known PHP app without version (Kimai) is orange, not grey", () => {
+	const r = run({ server: "Apache/2.4.68 (Debian)", "set-cookie": ["KIMAI=abc; path=/; httponly"] }, "<html><head><title>Kimai</title></head></html>");
+	assert.equal(r.verdict, "orange");
+	assert.match(r.findings[0].params[0], /App: Kimai/);
+	assert.ok(r.signals.some((x) => x.name === "Set-Cookie" && x.value === "KIMAI=…"));
+	assert.ok(!JSON.stringify(r.signals).includes("abc"), "cookie values must never be shown");
+});
+
 test("redirect to another host is noted", () => {
 	const r = engine.analyze({ responses: [{ headers: {} }], requestedUrl: "https://a.ch/", finalUrl: "https://www.b.ch/" }, fixdata);
 	assert.ok(codes(r.notes).includes("REDIRECTED"));
