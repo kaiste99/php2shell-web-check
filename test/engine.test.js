@@ -19,6 +19,8 @@ const MATRIX = [
 	["Debian 13 fixed package", { "x-powered-by": "PHP/8.4.27-1~deb13u1" }, "green", "UPSTREAM_FIXED"],
 	["Debian 13 old package", { "x-powered-by": "PHP/8.4.24-1~deb13u1" }, "red", "DISTRO_BELOW_FIX"],
 	["Debian 12, no fix yet", { "x-powered-by": "PHP/8.2.34-1~deb12u1" }, "red", "DISTRO_NO_FIX"],
+	["official Docker image on Debian base, below fix", { "x-powered-by": "PHP/8.5.8", server: "Apache/2.4.68 (Debian)" }, "red", "UPSTREAM_BELOW_FIX"],
+	["official Docker image on Debian base, fixed", { "x-powered-by": "PHP/8.5.12", server: "Apache/2.4.69 (Debian)" }, "green", "UPSTREAM_FIXED"],
 	["RHEL, plain version", { "x-powered-by": "PHP/8.2.13", server: "Apache/2.4.57 (Red Hat Enterprise Linux)" }, "orange", "BACKPORT_POSSIBLE"],
 	["sury build below fix", { "x-powered-by": "PHP/8.3.35-1+ubuntu24.04.1+deb.sury.org+1", server: "nginx (Ubuntu)" }, "red", "UPSTREAM_BELOW_FIX"],
 	["sury build fixed", { "x-powered-by": "PHP/8.3.36-1+ubuntu24.04.1+deb.sury.org+1" }, "green", "UPSTREAM_FIXED"],

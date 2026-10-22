@@ -26,7 +26,7 @@ Gelesen werden nur Signale, die der Server jedem Besucher schickt: `X-Powered-By
 | Ampel | Wann |
 | --- | --- |
 | 🔴 **Verdacht auf Verwundbarkeit** | Upstream-Version unter dem Fix-Release, Distributionspaket unter dem Fix-Paket oder Distribution ohne Fix. Ebenso ein EOL-Zweig (8.1 und älter) ohne Hinweis auf einen Distributions-Build. |
-| 🟠 **Unbestimmt, lokal prüfen** | PHP erkannt, aber keine Version sichtbar (z.B. `expose_php=Off`). Oder Version unter dem Fix-Stand bei einem Distributions-Build (Ubuntu, Debian, RHEL-Familie), der den Fix zurückportiert haben kann. Oder der Fix-Stand der Distribution ist im Tool noch nicht bestätigt. |
+| 🟠 **Unbestimmt, lokal prüfen** | PHP erkannt, aber keine Version sichtbar (z.B. `expose_php=Off`). Oder Version unter dem Fix-Stand bei einem Distributions-Build von Ubuntu oder der RHEL-Familie, der den Fix zurückportiert haben kann. Ein reiner Debian-Hinweis zählt nicht: Debian liefert neue Upstream-Versionen aus, und die offiziellen PHP-Docker-Images sind Upstream-Builds auf Debian-Basis. Oder der Fix-Stand der Distribution ist im Tool noch nicht bestätigt. |
 | 🟢 **Wahrscheinlich gepatcht** | Version auf oder über dem Fix-Release bzw. Fix-Paket |
 | ⚪ **Keine PHP-Hinweise** | Nichts deutet auf PHP hin. Das ist ausdrücklich **kein** «nicht betroffen». |
 
@@ -53,7 +53,7 @@ Die Datei gibt nur die Werte aus, die für die beiden Advisories relevant sind, 
 - **CVE-2026-109618:** Risiko je Server-API (mod_php, FPM, LSAPI), dazu `memory_limit=-1` als Mitigation
 - **CVE-2026-109619:** offene Angriffswege über Upload Progress, `fatal_error_backtraces` und mod_php-INI-Warnungen
 
-Bei Distributions-Builds wie Ubuntu, Debian oder der RHEL-Familie meldet PHP die alte Upstream-Version auch nach einem Backport. Der Selbsttest erkennt das Betriebssystem und verweist dann auf die Prüfung der Paketversion:
+Bei Distributions-Builds von Ubuntu oder der RHEL-Familie meldet PHP die alte Upstream-Version auch nach einem Backport. Der Selbsttest erkennt das Betriebssystem und verweist dann auf die Prüfung der Paketversion:
 
 ```bash
 # Debian/Ubuntu: installierte PHP-Pakete und Versionen

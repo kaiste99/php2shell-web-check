@@ -39,6 +39,12 @@ test("Ubuntu build without package suffix -> orange, not a false red", () => {
 	assert.ok(codes(r.actions).includes("LOCAL_CHECK"));
 });
 
+test("Docker image on Debian base (os-release debian) is not treated as backport", () => {
+	const r = engine.analyzeSelftest(out({ PHP_VERSION: "8.5.8", ...BASE, PHP_SAPI: "apache2handler", OS_RELEASE: "debian 13" }), fixdata);
+	assert.equal(r.verdict, "red");
+	assert.ok(codes(r.findings).includes("UPSTREAM_BELOW_FIX"));
+});
+
 test("upload progress off closes the session path", () => {
 	const r = engine.analyzeSelftest(out({ PHP_VERSION: "8.4.10", ...BASE, "session.upload_progress.enabled": "''" }), fixdata);
 	assert.ok(codes(r.findings).includes("B_UPLOAD_OFF"));

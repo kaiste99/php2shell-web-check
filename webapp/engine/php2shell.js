@@ -328,8 +328,12 @@ sap.ui.define([], function () {
 			return result("orange", "DISTRO_UNCONFIRMED", [d.label, v.raw], !fixed);
 		}
 
-		// deb.sury.org builds ship upstream releases, no backports
-		var build = /sury/i.test(v.suffix) ? null : (distroFromText(v.suffix) || (v.suffix ? v.suffix : null) || serverDistro);
+		// deb.sury.org builds ship upstream releases, no backports. A bare "Debian" hint
+		// (Server header, os-release) does not suggest backports either: Debian ships
+		// upstream point releases, and the official php Docker images are upstream
+		// builds on a Debian base. Ubuntu and the RHEL family keep old version numbers.
+		var hostDistro = serverDistro === "Debian" ? null : serverDistro;
+		var build = /sury/i.test(v.suffix) ? null : (distroFromText(v.suffix) || (v.suffix ? v.suffix : null) || hostDistro);
 		if (build) {
 			return result("orange", "BACKPORT_POSSIBLE", [v.upstream, build], !fixed);
 		}
